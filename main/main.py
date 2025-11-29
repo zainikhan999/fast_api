@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from app.api.router import api_router
-
 app = FastAPI()
 
 origins = ["*"]
@@ -17,7 +16,6 @@ app.add_middleware(
     )
 
 app.include_router(api_router, prefix="/api")
-
 @app.get("/", response_class=HTMLResponse)
 def index():
     message = "Starter Template for FastAPI"
