@@ -30,7 +30,7 @@ export default function Home() {
   const fetchNotes = async () => {
     try {
       const { data } = await axios.get(`${API_BASE}/notes`);
-      setNotes(data.notes);
+      setNotes(data);
     } catch (err) {
       console.error("Failed to fetch notes:", err);
     }
@@ -43,15 +43,16 @@ export default function Home() {
   const addNote = async () => {
     if (!newNote.trim()) return;
     try {
-      const { data } = await axios.post(`${API_BASE}/add_note`, null, {
-        params: { text: newNote },
+      const { data } = await axios.post(`${API_BASE}/add_note`, {
+        text: newNote,
       });
-      setNotes([...notes, data.note]);
+      setNotes([...notes, data]);
       setNewNote("");
       setShowAddModal(false);
       setCurrentView("notes");
     } catch (err) {
       console.error("Failed to add note:", err);
+      alert("Failed to add note. Check console for details.");
     }
   };
 
@@ -107,21 +108,15 @@ export default function Home() {
 
   const saveEdit = async () => {
     try {
-      const { data } = await axios.put(
-        `${API_BASE}/update_note/${editingId}`,
-        null,
-        { params: { text: editingText } }
-      );
+      const { data } = await axios.put(`${API_BASE}/update_note/${editingId}`, {
+        text: editingText,
+      });
 
       if (currentView === "notes") {
-        setNotes(
-          notes.map((note) => (note.id === editingId ? data.note : note))
-        );
+        setNotes(notes.map((note) => (note.id === editingId ? data : note)));
       } else if (currentView === "archive") {
         setArchivedNotes(
-          archivedNotes.map((note) =>
-            note.id === editingId ? data.note : note
-          )
+          archivedNotes.map((note) => (note.id === editingId ? data : note))
         );
       }
 
@@ -129,17 +124,19 @@ export default function Home() {
       setEditingText("");
     } catch (err) {
       console.error("Failed to update note:", err);
+      alert("Failed to update note. Check console for details.");
     }
   };
 
   const getCurrentNotes = () => {
     let currentNotes = [];
-    if (currentView === "notes") currentNotes = notes;
-    else if (currentView === "archive") currentNotes = archivedNotes;
-    else if (currentView === "trash") currentNotes = trashedNotes;
+
+    if (currentView === "notes") currentNotes = notes || [];
+    else if (currentView === "archive") currentNotes = archivedNotes || [];
+    else if (currentView === "trash") currentNotes = trashedNotes || [];
 
     return currentNotes.filter((note) =>
-      note.text.toLowerCase().includes(searchQuery.toLowerCase())
+      note?.text?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   };
 
@@ -232,7 +229,7 @@ export default function Home() {
           >
             <span>Notes</span>
             <span className="text-sm bg-gray-200 px-2 py-1 rounded-full">
-              {notes.length}
+              {notes?.length ?? 0}
             </span>
           </div>
           <div

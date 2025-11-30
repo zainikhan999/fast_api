@@ -1,1 +1,0 @@
-# use pydantic schemas for validation and serialization

@@ -1,41 +1,35 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
+from app.db.notes_queries import get_all_notes, add_note, update_note, delete_note
+from app.schemas.note import NoteCreate, NoteUpdate, NoteResponse
+from typing import List
 
 notes_router = APIRouter()
 
-# In-memory storage for notes
-notes = [
-    {"id": 1, "text": "Example note 1"},
-    {"id": 2, "text": "Example note 2"},
-]
-
-# Get all notes
-@notes_router.get("/notes")
+@notes_router.get("/notes", response_model=List[NoteResponse])
 async def get_notes():
-    return JSONResponse(content={"notes": notes})
+    return get_all_notes()
 
-# Add a new note
-@notes_router.post("/add_note")
-async def add_note(text: str):
-    new_id = len(notes) + 1
-    note = {"id": new_id, "text": text}
-    notes.append(note)
-    return JSONResponse(content={"message": "Note added", "note": note})
 
-# Update a note
-@notes_router.put("/update_note/{note_id}")
-async def update_note(note_id: int, text: str):
-    for note in notes:
-        if note["id"] == note_id:
-            note["text"] = text
-            return JSONResponse(content={"message": "Note updated", "note": note})
-    raise HTTPException(status_code=404, detail="Note not found")
+@notes_router.post("/add_note", response_model=NoteResponse)
+async def add_new_note(note: NoteCreate):
+    new_note = add_note(note.text)
+    if new_note:
+        return new_note
+    raise HTTPException(status_code=500, detail="Failed to add note")
 
-# Delete a note
+
+@notes_router.put("/update_note/{note_id}", response_model=NoteResponse)
+async def update_note_endpoint(note_id: int, note: NoteUpdate):
+    updated = update_note(note_id, note.text)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return {"id": updated[0], "text": updated[1]}
+
+
 @notes_router.delete("/delete_note/{note_id}")
-async def delete_note(note_id: int):
-    for note in notes:
-        if note["id"] == note_id:
-            notes.remove(note)
-            return JSONResponse(content={"message": "Note deleted"})
-    raise HTTPException(status_code=404, detail="Note not found")
+async def delete_note_endpoint(note_id: int):
+    deleted = delete_note(note_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return {"message": "Note deleted"}
